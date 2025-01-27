@@ -7,6 +7,6 @@ sudo apt install -y apt-transport-https
 
 echo "deb https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
 
-sudo apt update
+sudo apt update --allow-insecure-repositories
 
 sudo apt install -y helm

@@ -53,9 +53,9 @@ echo "Installing docker"
 echo "Docker installed"
 
 # Install kubectl
-echo "Installing kubectl"
-"$DIR/install-kubectl.sh"
-echo "Kubectl installed"
+# echo "Installing kubectl"
+# "$DIR/install-kubectl.sh"
+# echo "Kubectl installed"
 
 # Install terraform
 echo "Installing terraform"
@@ -68,9 +68,9 @@ echo "Installing k3s"
 echo "K3s installed"
 
 # Install dotnet
-echo "Installing dotnet"
-"$DIR/install-dotnet.sh"
-echo "Dotnet installed"
+# echo "Installing dotnet"
+# "$DIR/install-dotnet.sh"
+# echo "Dotnet installed"
 
 # Remove unused packages
 sudo apt autoremove -y

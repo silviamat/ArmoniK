@@ -127,7 +127,8 @@ compute_plane = {
     # ArmoniK workers
     worker = [
       {
-        image = "hello"
+        image = "armonik-cpp-hello-worker"
+        tag="0.1.0"
         limits = {
           cpu    = "1000m"
           memory = "1024Mi"

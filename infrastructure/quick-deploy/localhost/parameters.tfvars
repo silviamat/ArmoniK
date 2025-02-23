@@ -127,8 +127,8 @@ compute_plane = {
     # ArmoniK workers
     worker = [
       {
-        image = "armonik-cpp-montecarlo-worker"
-        tag="0.1.0"
+        image = "montecarlo"
+        tag="latest"
         limits = {
           cpu    = "1000m"
           memory = "1024Mi"

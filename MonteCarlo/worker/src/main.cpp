@@ -3,7 +3,9 @@
 #include <random>
 #include <vector>
 #include <cmath>
-#include <nlohmann/json.hpp>
+#include <sstream>
+#include <string>
+#include <map>
 
 #include <grpcpp/grpcpp.h>
 #include "grpcpp/support/sync_stream.h"
@@ -14,14 +16,82 @@
 #include "Worker/TaskHandler.h"
 #include "exceptions/ArmoniKApiException.h"
 
-using json = nlohmann::json;
+// Custom structures to replace JSON
+struct Asset {
+    std::string name;
+    double spot;
+    double volatility;
+    double weight;
+
+    std::string serialize() const {
+        std::stringstream ss;
+        ss << name << "," << spot << "," << volatility << "," << weight;
+        return ss.str();
+    }
+
+    static Asset deserialize(const std::string& str) {
+        std::stringstream ss(str);
+        std::string name;
+        double spot, volatility, weight;
+        
+        std::getline(ss, name, ',');
+        ss >> spot;
+        ss.ignore(); // skip comma
+        ss >> volatility;
+        ss.ignore();
+        ss >> weight;
+        
+        return Asset{name, spot, volatility, weight};
+    }
+};
+
+struct SimulationParams {
+    std::vector<Asset> basket;
+    double risk_free_rate;
+    double time_to_maturity;
+    int num_simulations;
+
+    std::string serialize() const {
+        std::stringstream ss;
+        ss << risk_free_rate << "\n";
+        ss << time_to_maturity << "\n";
+        ss << num_simulations << "\n";
+        ss << basket.size() << "\n";
+        
+        for (const auto& asset : basket) {
+            ss << asset.serialize() << "\n";
+        }
+        return ss.str();
+    }
+
+    static SimulationParams deserialize(const std::string& str) {
+        std::stringstream ss(str);
+        SimulationParams params;
+        
+        ss >> params.risk_free_rate;
+        ss >> params.time_to_maturity;
+        ss >> params.num_simulations;
+        
+        size_t basket_size;
+        ss >> basket_size;
+        ss.ignore(); // skip newline
+
+        for (size_t i = 0; i < basket_size; i++) {
+            std::string asset_str;
+            std::getline(ss, asset_str);
+            params.basket.push_back(Asset::deserialize(asset_str));
+        }
+        
+        return params;
+    }
+};
 
 class MonteCarloWorker: public armonik::api::worker::ArmoniKWorker {
 public: 
     explicit MonteCarloWorker(std::unique_ptr<armonik::api::grpc::v1::agent::Agent::Stub> agent)
         : ArmoniKWorker(std::move(agent)) {}
 
-    double simulate_basket_value(const json& basket, double risk_free_rate, 
+    double simulate_basket_value(const std::vector<Asset>& basket, double risk_free_rate, 
                                double time_to_maturity, int num_paths) {
         std::random_device rd;
         std::mt19937 gen(rd());
@@ -33,9 +103,9 @@ public:
             double path_value = 0.0;
             
             for (const auto& asset : basket) {
-                double S0 = asset["spot"];
-                double sigma = asset["volatility"];
-                double weight = asset["weight"];
+                double S0 = asset.spot;
+                double sigma = asset.volatility;
+                double weight = asset.weight;
                 
                 // Generate random normal variable
                 double Z = normal(gen);
@@ -57,15 +127,13 @@ public:
     armonik::api::worker::ProcessStatus Execute(armonik::api::worker::TaskHandler &taskHandler) override {
         try {
             // Parse input parameters
-            json input = json::parse(taskHandler.getPayload());
+            SimulationParams params = SimulationParams::deserialize(taskHandler.getPayload());
             
-            double risk_free_rate = input["risk_free_rate"];
-            double time_to_maturity = input["time_to_maturity"];
-            int num_simulations = input["num_simulations"];
-            json basket = input["basket"];
-
             // Run simulation
-            double result = simulate_basket_value(basket, risk_free_rate, time_to_maturity, num_simulations);
+            double result = simulate_basket_value(params.basket, 
+                                               params.risk_free_rate, 
+                                               params.time_to_maturity, 
+                                               params.num_simulations);
             
             // Send result
             if (!taskHandler.getExpectedResults().empty()) {

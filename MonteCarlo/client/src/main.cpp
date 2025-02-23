@@ -11,9 +11,7 @@
 #include <map>
 #include <vector>
 #include <sstream>
-#include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
 namespace ak_common = armonik::api::common;
 namespace ak_client = armonik::api::client;
 namespace ak_grpc = armonik::api::grpc::v1;
@@ -23,6 +21,32 @@ struct Asset {
     double spot;
     double volatility;
     double weight;
+
+    std::string serialize() const {
+        std::stringstream ss;
+        ss << name << "," << spot << "," << volatility << "," << weight;
+        return ss.str();
+    }
+};
+
+struct SimulationParams {
+    std::vector<Asset> basket;
+    double risk_free_rate;
+    double time_to_maturity;
+    int num_simulations;
+
+    std::string serialize() const {
+        std::stringstream ss;
+        ss << risk_free_rate << "\n";
+        ss << time_to_maturity << "\n";
+        ss << num_simulations << "\n";
+        ss << basket.size() << "\n";
+        
+        for (const auto& asset : basket) {
+            ss << asset.serialize() << "\n";
+        }
+        return ss.str();
+    }
 };
 
 int main() {
@@ -76,25 +100,16 @@ int main() {
 
     // Prepare tasks
     for (int i = 0; i < num_tasks; i++) {
-        // Create JSON payload
-        json payload = {
-            {"basket", json::array()},
-            {"risk_free_rate", risk_free_rate},
-            {"time_to_maturity", time_to_maturity},
-            {"num_simulations", simulations_per_task}
+        // Create payload
+        SimulationParams params{
+            basket,
+            risk_free_rate,
+            time_to_maturity,
+            simulations_per_task
         };
 
-        for (const auto& asset : basket) {
-            payload["basket"].push_back({
-                {"name", asset.name},
-                {"spot", asset.spot},
-                {"volatility", asset.volatility},
-                {"weight", asset.weight}
-            });
-        }
-
         std::map<std::string,std::string> results = resultsClient.create_results_metadata(session_id, {"output" + std::to_string(i), "payload" + std::to_string(i)});
-        resultsClient.upload_result_data(session_id, results["payload" + std::to_string(i)], payload.dump());
+        resultsClient.upload_result_data(session_id, results["payload" + std::to_string(i)], params.serialize());
         output_results.push_back(results["output" + std::to_string(i)]);
         payloads.push_back(results["payload" + std::to_string(i)]);
     }

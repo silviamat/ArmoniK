@@ -53,9 +53,9 @@ echo "Installing docker"
 echo "Docker installed"
 
 # Install kubectl
-# echo "Installing kubectl"
-# "$DIR/install-kubectl.sh"
-# echo "Kubectl installed"
+echo "Installing kubectl"
+"$DIR/install-kubectl.sh"
+echo "Kubectl installed"
 
 # Install terraform
 echo "Installing terraform"

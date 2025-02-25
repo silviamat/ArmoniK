@@ -48,7 +48,7 @@ namespace ArmoniK.MonteCarlo.Worker
       {
         // We convert the binary payload from the handler back to the string sent by the client
         var input = Encoding.ASCII.GetString(taskHandler.Payload);
-        int value = (int)char.GetNumericValue(input);
+        int value = int.Parse(input);
 
         // We get the result that the task should produce
         // The handler has this information

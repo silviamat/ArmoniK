@@ -5,8 +5,8 @@ WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
-COPY ["MonteCarloCsharp/Client/MonteCarlo.Client.csproj", "MonteCarlo/Client/"]
-RUN dotnet restore "MonteCarloCsharp/Client/MonteCarlo.Client.csproj"
+COPY ["MonteCarlo/Client/MonteCarlo.Client.csproj", "MonteCarlo/Client/"]
+RUN dotnet restore "MonteCarlo/Client/MonteCarlo.Client.csproj"
 COPY . .
 WORKDIR "/src/MonteCarlo/Client"
 RUN dotnet build "MonteCarlo.Client.csproj" -c Release -o /app/build

@@ -14,6 +14,67 @@ using Microsoft.Extensions.Logging;
 
 namespace ArmoniK.MonteCarlo.Worker
 {
+    public struct Asset
+{
+    public string Name { get; set; }
+    public double Spot { get; set; }
+    public double Volatility { get; set; }
+    public double Weight { get; set; }
+}
+
+public class BasketSimulator
+{
+    private readonly Random _random;
+    
+    public BasketSimulator()
+    {
+        _random = new Random();
+    }
+
+    private double GenerateNormalRandom()
+    {
+        // Box-Muller transform to generate a standard normal random variable
+        double u1 = 1.0 - _random.NextDouble(); // Uniform(0,1] random doubles
+        double u2 = 1.0 - _random.NextDouble();
+        return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Cos(2.0 * Math.PI * u2);
+    }
+
+    public double SimulateBasketValue(
+        List<Asset> basket,
+        double riskFreeRate,
+        double timeToMaturity,
+        int numPaths)
+    {
+        double totalValue = 0.0;
+
+        for (int path = 0; path < numPaths; path++)
+        {
+            double pathValue = 0.0;
+
+            foreach (var asset in basket)
+            {
+                double S0 = asset.Spot;
+                double sigma = asset.Volatility;
+                double weight = asset.Weight;
+
+                // Generate random normal variable
+                double Z = GenerateNormalRandom();
+
+                // Calculate final stock price using geometric Brownian motion
+                double ST = S0 * Math.Exp((riskFreeRate - 0.5 * sigma * sigma) * timeToMaturity
+                                        + sigma * Math.Sqrt(timeToMaturity) * Z);
+
+                pathValue += weight * ST;
+            }
+
+            totalValue += pathValue;
+        }
+
+        // Discount the average value back to present
+        return Math.Exp(-riskFreeRate * timeToMaturity) * (totalValue / numPaths);
+    }
+}
+
   public class MonteCarloWorker : WorkerStreamWrapper
   {
     /// <summary>
@@ -49,7 +110,19 @@ namespace ArmoniK.MonteCarlo.Worker
       {
         // We convert the binary payload from the handler back to the string sent by the client
         var input = Encoding.ASCII.GetString(taskHandler.Payload);
-        ExtractValues(input, out int value1, out int value2);
+        ExtractValues(input, out int numSimulations, out float riskFreeRate, out float timeToMaturity);
+        List<Asset> basket = new List<Asset>
+        {
+            new Asset { Name = "AAPL", Spot = 180.0, Volatility = 0.25, Weight = 0.4 },
+            new Asset { Name = "MSFT", Spot = 350.0, Volatility = 0.20, Weight = 0.3 },
+            new Asset { Name = "GOOGL", Spot = 140.0, Volatility = 0.28, Weight = 0.3 }
+        };
+        float value = BasketSimulator.SimulateBasketValue(
+            basket,
+            numSimulations,
+            riskFreeRate,
+            timeToMaturity
+        );
 
         // We get the result that the task should produce
         // The handler has this information
@@ -57,7 +130,7 @@ namespace ArmoniK.MonteCarlo.Worker
         var resultId = taskHandler.ExpectedResults.Single();
         // We the result of the task using through the handler
         await taskHandler.SendResult(resultId,
-                                     Encoding.ASCII.GetBytes($"{value1 + value2}"))
+                                     Encoding.ASCII.GetBytes($"{value}"))
                          .ConfigureAwait(false);
       }
       // If there is an exception, we put the task in error
@@ -84,19 +157,19 @@ namespace ArmoniK.MonteCarlo.Worker
              };
     }
 
-    static void ExtractValues(string input, out int value1, out int value2)
+    static void ExtractValues(string input, out int numSimulations, out float riskFreeRate, out float timeToMaturity)
     {
-        Regex regex = new Regex(@"value1:\s*(\d+),\s*value2:\s*(\d+)");
+        Regex regex = new Regex(@"numSimulations:\s*(\d+),\s*riskFreeRate:\s*(\f+),\s*timeToMaturity:\s*(\f+)");
         Match match = regex.Match(input);
 
         if (!match.Success)
         {
-            throw new FormatException("Input string format is incorrect. Expected format: 'value1: <number>, value2: <number>'");
+            throw new FormatException("Input string format is incorrect. Expected format: 'numSimulations: <int>, riskFreeRate: <float>, timeToMaturity: <float>'");
         }
 
-        if (!int.TryParse(match.Groups[1].Value, out value1) || !int.TryParse(match.Groups[2].Value, out value2))
+        if (!int.TryParse(match.Groups[1].Value, out numSimulations) || !float.TryParse(match.Groups[2].Value, out riskFreeRate) || !float.TryParse(match.Groups[3].Value, out timeToMaturity))
         {
-            throw new FormatException("Failed to parse values as integers.");
+            throw new FormatException("Failed to parse values as integer and floats.");
         }
     }
   }

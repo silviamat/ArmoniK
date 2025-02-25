@@ -125,7 +125,7 @@ namespace ArmoniK.Samples.HelloWorld.Client
                                                          },
                                                        });
 
-      WriteLine($"Task id {submitTasksResponse.TaskInfos.Single().TaskId}");
+      WriteLine($"Task id: {submitTasksResponse.TaskInfos.Single().TaskId}");
 
       // Wait for task end and result availability
       await eventClient.WaitForResultsAsync(createSessionReply.SessionId,

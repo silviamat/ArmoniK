@@ -47,8 +47,10 @@ namespace ArmoniK.MonteCarlo.Worker
       try
       {
         // We convert the binary payload from the handler back to the string sent by the client
-        var input = Encoding.ASCII.GetString(taskHandler.Payload);
-        int value = int.Parse(input);
+        var input1 = Encoding.ASCII.GetString(taskHandler.Payload1);
+        int value1 = int.Parse(input1);
+        var input2 = Encoding.ASCII.GetString(taskHandler.Payload2);
+        int value2 = int.Parse(input2);
 
         // We get the result that the task should produce
         // The handler has this information
@@ -56,7 +58,7 @@ namespace ArmoniK.MonteCarlo.Worker
         var resultId = taskHandler.ExpectedResults.Single();
         // We the result of the task using through the handler
         await taskHandler.SendResult(resultId,
-                                     Encoding.ASCII.GetBytes($"{value * 2}"))
+                                     Encoding.ASCII.GetBytes($"{value1 + value2}"))
                          .ConfigureAwait(false);
       }
       // If there is an exception, we put the task in error

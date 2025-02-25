@@ -12,9 +12,6 @@ using ArmoniK.Api.Worker.Worker;
 
 using Microsoft.Extensions.Logging;
 
-namespace ArmoniK.MonteCarlo.Worker
-{
-
 static void ExtractValues(string input, out int value1, out int value2)
 {
     Regex regex = new Regex(@"value1:\s*(\d+),\s*value2:\s*(\d+)");
@@ -30,6 +27,9 @@ static void ExtractValues(string input, out int value1, out int value2)
         throw new FormatException("Failed to parse values as integers.");
     }
 }
+
+namespace ArmoniK.MonteCarlo.Worker
+{
   public class MonteCarloWorker : WorkerStreamWrapper
   {
     /// <summary>

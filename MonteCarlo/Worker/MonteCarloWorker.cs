@@ -118,7 +118,7 @@ public class BasketSimulator
             new Asset { Name = "MSFT", Spot = 350.0, Volatility = 0.20, Weight = 0.3 },
             new Asset { Name = "GOOGL", Spot = 140.0, Volatility = 0.28, Weight = 0.3 }
         };
-        BasketSimulator simulator;
+        BasketSimulator simulator = new BasketSimulator();
         double value = simulator.SimulateBasketValue(
             basket,
             riskFreeRate,

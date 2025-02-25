@@ -14,6 +14,22 @@ using Microsoft.Extensions.Logging;
 
 namespace ArmoniK.MonteCarlo.Worker
 {
+
+static void ExtractValues(string input, out int value1, out int value2)
+{
+    Regex regex = new Regex(@"value1:\s*(\d+),\s*value2:\s*(\d+)");
+    Match match = regex.Match(input);
+
+    if (!match.Success)
+    {
+        throw new FormatException("Input string format is incorrect. Expected format: 'value1: <number>, value2: <number>'");
+    }
+
+    if (!int.TryParse(match.Groups[1].Value, out value1) || !int.TryParse(match.Groups[2].Value, out value2))
+    {
+        throw new FormatException("Failed to parse values as integers.");
+    }
+}
   public class MonteCarloWorker : WorkerStreamWrapper
   {
     /// <summary>
@@ -49,14 +65,7 @@ namespace ArmoniK.MonteCarlo.Worker
       {
         // We convert the binary payload from the handler back to the string sent by the client
         var input = Encoding.ASCII.GetString(taskHandler.Payload);
-        Regex regex = new Regex(@"value1:\s*(\d+),\s*value2:\s*(\d+)");
-        Match match = regex.Match(input);
-
-        if (match.Success)
-        {
-            int value1 = int.Parse(match.Groups[1].Value);
-            int value2 = int.Parse(match.Groups[2].Value);
-        }
+        ExtractValues(input, out int value1, out int value2);
 
         // We get the result that the task should produce
         // The handler has this information

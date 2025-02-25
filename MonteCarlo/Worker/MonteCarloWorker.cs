@@ -118,7 +118,8 @@ public class BasketSimulator
             new Asset { Name = "MSFT", Spot = 350.0, Volatility = 0.20, Weight = 0.3 },
             new Asset { Name = "GOOGL", Spot = 140.0, Volatility = 0.28, Weight = 0.3 }
         };
-        double value = BasketSimulator.SimulateBasketValue(
+        BasketSimulator simulator;
+        double value = simulator.SimulateBasketValue(
             basket,
             riskFreeRate,
             timeToMaturity,
@@ -168,7 +169,7 @@ public class BasketSimulator
             throw new FormatException("Input string format is incorrect. Expected format: 'numSimulations: <int>, riskFreeRate: <float>, timeToMaturity: <float>'");
         }
 
-        if (!int.TryParse(match.Groups[1].Value, out numSimulations) || !double.TryParse(match.Groups[2].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out riskFreeRate) || !double.TryParse(match.Groups[3].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out timeToMaturity))
+        if (!int.TryParse(match.Groups[1].Value, out numSimulations) || !double.TryParse(match.Groups[2].Value, out riskFreeRate) || !double.TryParse(match.Groups[3].Value, out timeToMaturity))
         {
             throw new FormatException("Failed to parse values as integer and doubles.");
         }

@@ -100,7 +100,7 @@ namespace ArmoniK.MonteCarlo.Client
                                                    {
                                                      new CreateResultsRequest.Types.ResultCreate
                                                      {
-                                                       Data = UnsafeByteOperations.UnsafeWrap(Encoding.ASCII.GetBytes("Hello")),
+                                                       Data = UnsafeByteOperations.UnsafeWrap(Encoding.ASCII.GetBytes('2')),
                                                        Name = "Payload",
                                                      },
                                                    },
@@ -140,7 +140,7 @@ namespace ArmoniK.MonteCarlo.Client
                                                          resultId,
                                                          CancellationToken.None);
 
-      WriteLine($"resultId: {resultId}, data: {Encoding.ASCII.GetString(result)}");
+      WriteLine($"resultId: {resultId}, double of input: {Encoding.ASCII.GetString(result)}");
     }
 
     public static async Task<int> Main(string[] args)

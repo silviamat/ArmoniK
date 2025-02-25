@@ -100,12 +100,8 @@ namespace ArmoniK.MonteCarlo.Client
                                                    {
                                                      new CreateResultsRequest.Types.ResultCreate
                                                      {
-                                                       Data = UnsafeByteOperations.UnsafeWrap(Encoding.ASCII.GetBytes("2")),
-                                                       Name = "Payload1",
-                                                     },
-                                                     {
-                                                       Data = UnsafeByteOperations.UnsafeWrap(Encoding.ASCII.GetBytes("3")),
-                                                       Name = "Payload2",
+                                                       Data = UnsafeByteOperations.UnsafeWrap(Encoding.ASCII.GetBytes("value1: 2, value2: 4")),
+                                                       Name = "Payload",
                                                      },
                                                    },
                                                  })

@@ -47,10 +47,15 @@ namespace ArmoniK.MonteCarlo.Worker
       try
       {
         // We convert the binary payload from the handler back to the string sent by the client
-        var input1 = Encoding.ASCII.GetString(taskHandler.Payload1);
-        int value1 = int.Parse(input1);
-        var input2 = Encoding.ASCII.GetString(taskHandler.Payload2);
-        int value2 = int.Parse(input2);
+        var input = Encoding.ASCII.GetString(taskHandler.Payload);
+        Regex regex = new Regex(@"value1:\s*(\d+),\s*value2:\s*(\d+)");
+        Match match = regex.Match(input);
+
+        if (match.Success)
+        {
+            int value1 = int.Parse(match.Groups[1].Value);
+            int value2 = int.Parse(match.Groups[2].Value);
+        }
 
         // We get the result that the task should produce
         // The handler has this information

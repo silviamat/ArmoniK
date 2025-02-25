@@ -111,18 +111,18 @@ public class BasketSimulator
       {
         // We convert the binary payload from the handler back to the string sent by the client
         var input = Encoding.ASCII.GetString(taskHandler.Payload);
-        ExtractValues(input, out int numSimulations, out float riskFreeRate, out float timeToMaturity);
+        ExtractValues(input, out int numSimulations, out double riskFreeRate, out double timeToMaturity);
         List<Asset> basket = new List<Asset>
         {
             new Asset { Name = "AAPL", Spot = 180.0, Volatility = 0.25, Weight = 0.4 },
             new Asset { Name = "MSFT", Spot = 350.0, Volatility = 0.20, Weight = 0.3 },
             new Asset { Name = "GOOGL", Spot = 140.0, Volatility = 0.28, Weight = 0.3 }
         };
-        float value = BasketSimulator.SimulateBasketValue(
+        double value = BasketSimulator.SimulateBasketValue(
             basket,
-            numSimulations,
             riskFreeRate,
-            timeToMaturity
+            timeToMaturity,
+            numSimulations
         );
 
         // We get the result that the task should produce
@@ -158,9 +158,9 @@ public class BasketSimulator
              };
     }
 
-    static void ExtractValues(string input, out int numSimulations, out float riskFreeRate, out float timeToMaturity)
+    static void ExtractValues(string input, out int numSimulations, out double riskFreeRate, out double timeToMaturity)
     {
-        Regex regex = new Regex(@"numSimulations:\s*(\d+),\s*riskFreeRate:\s*(\f+),\s*timeToMaturity:\s*(\f+)");
+        Regex regex = new Regex(@"numSimulations:\s*(\d+),\s*riskFreeRate:\s*([\d\.]+),\s*timeToMaturity:\s*([\d\.]+)");
         Match match = regex.Match(input);
 
         if (!match.Success)
@@ -168,9 +168,9 @@ public class BasketSimulator
             throw new FormatException("Input string format is incorrect. Expected format: 'numSimulations: <int>, riskFreeRate: <float>, timeToMaturity: <float>'");
         }
 
-        if (!int.TryParse(match.Groups[1].Value, out numSimulations) || !float.TryParse(match.Groups[2].Value, out riskFreeRate) || !float.TryParse(match.Groups[3].Value, out timeToMaturity))
+        if (!int.TryParse(match.Groups[1].Value, out numSimulations) || !double.TryParse(match.Groups[2].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out riskFreeRate) || !double.TryParse(match.Groups[3].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out timeToMaturity))
         {
-            throw new FormatException("Failed to parse values as integer and floats.");
+            throw new FormatException("Failed to parse values as integer and doubles.");
         }
     }
   }

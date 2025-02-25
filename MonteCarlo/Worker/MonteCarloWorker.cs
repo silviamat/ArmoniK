@@ -1,107 +1,85 @@
+using System;
+using System.Linq;
 using System.Text;
-using System.Text.Json;
+using System.Threading.Tasks;
+
 using ArmoniK.Api.Common.Channel.Utils;
+using ArmoniK.Api.Common.Options;
 using ArmoniK.Api.Common.Utils;
 using ArmoniK.Api.gRPC.V1;
 using ArmoniK.Api.Worker.Worker;
+
 using Microsoft.Extensions.Logging;
 
-namespace MonteCarlo.Worker
+namespace ArmoniK.Samples.HelloWorld.Worker
 {
-    public class Asset
+  public class HelloWorldWorker : WorkerStreamWrapper
+  {
+    /// <summary>
+    ///   Initializes an instance of <see cref="HelloWorldWorker" />
+    /// </summary>
+    /// <param name="loggerFactory">Factory to create loggers</param>
+    /// <param name="computePlane">Compute Plane</param>
+    /// <param name="provider">gRPC channel provider to send tasks and results to ArmoniK Scheduler</param>
+    public HelloWorldWorker(ILoggerFactory      loggerFactory,
+                            ComputePlane        computePlane,
+                            GrpcChannelProvider provider)
+      : base(loggerFactory,
+             computePlane,
+             provider)
+      => logger_ = loggerFactory.CreateLogger<HelloWorldWorker>();
+
+    /// <summary>
+    ///   Function that represents the processing of a task.
+    /// </summary>
+    /// <param name="taskHandler">Handler that holds the payload, the task metadata and helpers to submit tasks and results</param>
+    /// <returns>
+    ///   An <see cref="Output" /> representing the status of the current task. This is the final step of the task.
+    /// </returns>
+    public override async Task<Output> Process(ITaskHandler taskHandler)
     {
-        public string Symbol { get; set; } = "";
-        public double InitialPrice { get; set; }
-        public double Volatility { get; set; }
-        public double Weight { get; set; }
+      // Logger scope that will add metadata (session and task ids) for each use of the logger
+      // It will facilitate the search for information related to the execution of the task/session
+      using var scopedLog = logger_.BeginNamedScope("Execute task",
+                                                    ("sessionId", taskHandler.SessionId),
+                                                    ("taskId", taskHandler.TaskId));
+
+      try
+      {
+        // We convert the binary payload from the handler back to the string sent by the client
+        var input = Encoding.ASCII.GetString(taskHandler.Payload);
+
+        // We get the result that the task should produce
+        // The handler has this information
+        // It also contains other information such as the data dependencies (id and binary data) if any
+        var resultId = taskHandler.ExpectedResults.Single();
+        // We the result of the task using through the handler
+        await taskHandler.SendResult(resultId,
+                                     Encoding.ASCII.GetBytes($"{input} World_ {resultId}"))
+                         .ConfigureAwait(false);
+      }
+      // If there is an exception, we put the task in error
+      // The task will not be retried by ArmoniK
+      // An uncatched exception means that the task will be retried
+      catch (Exception e)
+      {
+        logger_.LogError(e,
+                         "Error during task computing.");
+        return new Output
+               {
+                 Error = new Output.Types.Error
+                         {
+                           Details = e.Message,
+                         },
+               };
+      }
+
+      // Return an OK output
+      // The task finished successfully
+      return new Output
+             {
+               Ok = new Empty(),
+             };
     }
-
-    public class SimulationParameters
-    {
-        public List<Asset> Assets { get; set; } = new();
-        public double RiskFreeRate { get; set; }
-        public double TimeHorizon { get; set; }
-        public int SimulationsPerTask { get; set; }
-    }
-
-    public class MonteCarloWorker : WorkerStreamWrapper
-    {
-        private readonly ILogger<MonteCarloWorker> logger_;
-        private readonly Random random_;
-
-        public MonteCarloWorker(ILoggerFactory loggerFactory,
-                               ComputePlane computePlane,
-                               GrpcChannelProvider provider)
-            : base(loggerFactory, computePlane, provider)
-        {
-            logger_ = loggerFactory.CreateLogger<MonteCarloWorker>();
-            random_ = new Random();
-        }
-
-        private double GenerateRandomNormal()
-        {
-            double u1 = 1.0 - random_.NextDouble();
-            double u2 = 1.0 - random_.NextDouble();
-            return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Cos(2.0 * Math.PI * u2);
-        }
-
-        private double SimulateAssetPrice(Asset asset, double riskFreeRate, double timeHorizon)
-        {
-            double drift = (riskFreeRate - 0.5 * Math.Pow(asset.Volatility, 2)) * timeHorizon;
-            double diffusion = asset.Volatility * Math.Sqrt(timeHorizon) * GenerateRandomNormal();
-            return asset.InitialPrice * Math.Exp(drift + diffusion);
-        }
-
-        public override async Task<Output> Process(ITaskHandler taskHandler)
-        {
-            using var scopedLog = logger_.BeginNamedScope("Execute Monte Carlo simulation",
-                                                        ("sessionId", taskHandler.SessionId),
-                                                        ("taskId", taskHandler.TaskId));
-            try
-            {
-                var parameters = JsonSerializer.Deserialize<SimulationParameters>(
-                    Encoding.UTF8.GetString(taskHandler.Payload));
-
-                if (parameters == null)
-                    throw new ArgumentNullException(nameof(parameters), "Failed to deserialize simulation parameters");
-
-                double totalBasketValue = 0.0;
-
-                // Run simulations
-                for (int sim = 0; sim < parameters.SimulationsPerTask; sim++)
-                {
-                    double basketValue = 0.0;
-                    foreach (var asset in parameters.Assets)
-                    {
-                        double finalPrice = SimulateAssetPrice(asset, 
-                                                             parameters.RiskFreeRate,
-                                                             parameters.TimeHorizon);
-                        basketValue += finalPrice * asset.Weight;
-                    }
-                    totalBasketValue += basketValue;
-                }
-
-                // Calculate average basket value
-                double averageBasketValue = totalBasketValue / parameters.SimulationsPerTask;
-
-                var resultId = taskHandler.ExpectedResults.Single();
-                await taskHandler.SendResult(resultId,
-                                          Encoding.UTF8.GetBytes(averageBasketValue.ToString()))
-                                          .ConfigureAwait(false);
-
-                return new Output { Ok = new Empty() };
-            }
-            catch (Exception e)
-            {
-                logger_.LogError(e, "Error during Monte Carlo simulation.");
-                return new Output
-                {
-                    Error = new Output.Types.Error
-                    {
-                        Details = e.Message,
-                    },
-                };
-            }
-        }
-    }
+  }
 }

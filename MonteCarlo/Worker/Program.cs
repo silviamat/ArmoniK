@@ -1,5 +1,6 @@
 using ArmoniK.Api.Worker.Utils;
-using ArmoniK.Samples.MonteCarloSimulation.Worker;
+using ArmoniK.Samples.HelloWorld.Worker;
 
-WorkerServer.Create<MonteCarloWorker>()
-           .Run();
+// Create the application and register the hello world example worker implementation
+WorkerServer.Create<HelloWorldWorker>()
+            .Run();

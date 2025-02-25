@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Text.Json;
+
 using ArmoniK.Api.Client;
 using ArmoniK.Api.Client.Options;
 using ArmoniK.Api.Client.Submitter;
@@ -14,148 +14,161 @@ using ArmoniK.Api.gRPC.V1.Events;
 using ArmoniK.Api.gRPC.V1.Results;
 using ArmoniK.Api.gRPC.V1.Sessions;
 using ArmoniK.Api.gRPC.V1.Tasks;
+
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+
 using static System.Console;
 
-namespace ArmoniK.Samples.MonteCarloSimulation.Client
+
+namespace ArmoniK.Samples.HelloWorld.Client
 {
-    public class Asset
+  internal static class Program
+  {
+    /// <summary>
+    ///   Method for sending task and retrieving their results from ArmoniK
+    /// </summary>
+    /// <param name="endpoint">The endpoint url of ArmoniK's control plane</param>
+    /// <param name="partition">Partition Id of the matching worker</param>
+    /// <returns>
+    ///   Task representing the asynchronous execution of the method
+    /// </returns>
+    /// <exception cref="Exception">Issues with results from tasks</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Unknown response type from control plane</exception>
+    internal static async Task Run(string endpoint,
+                                   string partition)
     {
-        public string Symbol { get; set; }
-        public double InitialPrice { get; set; }
-        public double Volatility { get; set; }
-        public double Weight { get; set; }
+      // Create gRPC channel to connect with ArmoniK control plane
+      var channel = GrpcChannelFactory.CreateChannel(new GrpcClient
+                                                     {
+                                                       Endpoint = endpoint,
+                                                     });
+
+      // Create client for task submission
+      var taskClient = new Tasks.TasksClient(channel);
+
+      // Create client for result creation
+      var resultClient = new Results.ResultsClient(channel);
+
+      // Create client for session creation
+      var sessionClient = new Sessions.SessionsClient(channel);
+
+      // Create client for events listening
+      var eventClient = new Events.EventsClient(channel);
+
+      // Default task options that will be used by each task if not overwritten when submitting tasks
+      var taskOptions = new TaskOptions
+                        {
+                          MaxDuration = Duration.FromTimeSpan(TimeSpan.FromHours(1)),
+                          MaxRetries  = 2,
+                          Priority    = 1,
+                          PartitionId = partition,
+                        };
+
+      // Request for session creation with default task options and allowed partitions for the session
+      var createSessionReply = sessionClient.CreateSession(new CreateSessionRequest
+                                                           {
+                                                             DefaultTaskOption = taskOptions,
+                                                             PartitionIds =
+                                                             {
+                                                               partition,
+                                                             },
+                                                           });
+
+      WriteLine($"sessionId: {createSessionReply.SessionId}");
+
+      // Create the result metadata and keep the id for task submission
+      var resultId = resultClient.CreateResultsMetaData(new CreateResultsMetaDataRequest
+                                                        {
+                                                          SessionId = createSessionReply.SessionId,
+                                                          Results =
+                                                          {
+                                                            new CreateResultsMetaDataRequest.Types.ResultCreate
+                                                            {
+                                                              Name = "Result",
+                                                            },
+                                                          },
+                                                        })
+                                 .Results.Single()
+                                 .ResultId;
+
+      // Create the payload metadata (a result) and upload data at the same time
+      var payloadId = resultClient.CreateResults(new CreateResultsRequest
+                                                 {
+                                                   SessionId = createSessionReply.SessionId,
+                                                   Results =
+                                                   {
+                                                     new CreateResultsRequest.Types.ResultCreate
+                                                     {
+                                                       Data = UnsafeByteOperations.UnsafeWrap(Encoding.ASCII.GetBytes("Hello")),
+                                                       Name = "Payload",
+                                                     },
+                                                   },
+                                                 })
+                                  .Results.Single()
+                                  .ResultId;
+
+      // Submit task with payload and result ids
+      var submitTasksResponse = taskClient.SubmitTasks(new SubmitTasksRequest
+                                                       {
+                                                         SessionId = createSessionReply.SessionId,
+                                                         TaskCreations =
+                                                         {
+                                                           new SubmitTasksRequest.Types.TaskCreation
+                                                           {
+                                                             PayloadId = payloadId,
+                                                             ExpectedOutputKeys =
+                                                             {
+                                                               resultId,
+                                                             },
+                                                           },
+                                                         },
+                                                       });
+
+      WriteLine($"Task id {submitTasksResponse.TaskInfos.Single().TaskId}");
+
+      // Wait for task end and result availability
+      await eventClient.WaitForResultsAsync(createSessionReply.SessionId,
+                                            new List<string>
+                                            {
+                                              resultId,
+                                            },
+                                            CancellationToken.None);
+
+      // Download result
+      var result = await resultClient.DownloadResultData(createSessionReply.SessionId,
+                                                         resultId,
+                                                         CancellationToken.None);
+
+      WriteLine($"resultId: {resultId}, data: {Encoding.ASCII.GetString(result)}");
     }
 
-    public class SimulationParameters
+    public static async Task<int> Main(string[] args)
     {
-        public List<Asset> Assets { get; set; }
-        public double RiskFreeRate { get; set; }
-        public double TimeHorizon { get; set; }
-        public int SimulationsPerTask { get; set; }
+      // Define the options for the application with their description and default value
+      var endpoint = new Option<string>("--endpoint",
+                                        description: "Endpoint for the connection to ArmoniK control plane.",
+                                        getDefaultValue: () => "http://localhost:5001");
+      var partition = new Option<string>("--partition",
+                                         description: "Name of the partition to which submit tasks.",
+                                         getDefaultValue: () => "default");
+
+      // Describe the application and its purpose
+      var rootCommand =
+        new
+          RootCommand($"Hello World demo for ArmoniK.\nIt sends a task to ArmoniK in the given partition <{partition.Name}>. The task receives 'Hello' as input string and, for the result that will be returned by the task, append the word 'World' and the resultID to the input. Then, the client retrieves and prints the result of the task.\nArmoniK endpoint location is provided through <{endpoint.Name}>");
+
+      // Add the options to the parser
+      rootCommand.AddOption(endpoint);
+      rootCommand.AddOption(partition);
+
+      // Configure the handler to call the function that will do the work
+      rootCommand.SetHandler(Run,
+                             endpoint,
+                             partition);
+
+      // Parse the command line parameters and call the function that represents the application
+      return await rootCommand.InvokeAsync(args);
     }
-
-    internal static class Program
-    {
-        internal static async Task Run(string endpoint,
-                                     string partition,
-                                     int numberOfTasks)
-        {
-            var channel = GrpcChannelFactory.CreateChannel(new GrpcClient { Endpoint = endpoint });
-            var taskClient = new Tasks.TasksClient(channel);
-            var resultClient = new Results.ResultsClient(channel);
-            var sessionClient = new Sessions.SessionsClient(channel);
-            var eventClient = new Events.EventsClient(channel);
-
-            var taskOptions = new TaskOptions
-            {
-                MaxDuration = Duration.FromTimeSpan(TimeSpan.FromHours(1)),
-                MaxRetries = 2,
-                Priority = 1,
-                PartitionId = partition,
-            };
-
-            var createSessionReply = sessionClient.CreateSession(new CreateSessionRequest
-            {
-                DefaultTaskOption = taskOptions,
-                PartitionIds = { partition },
-            });
-
-            WriteLine($"Session ID: {createSessionReply.SessionId}");
-
-            // Create simulation parameters
-            var simParams = new SimulationParameters
-            {
-                Assets = new List<Asset>
-                {
-                    new Asset { Symbol = "AAPL", InitialPrice = 150.0, Volatility = 0.25, Weight = 0.4 },
-                    new Asset { Symbol = "MSFT", InitialPrice = 280.0, Volatility = 0.22, Weight = 0.3 },
-                    new Asset { Symbol = "GOOGL", InitialPrice = 2500.0, Volatility = 0.28, Weight = 0.3 }
-                },
-                RiskFreeRate = 0.02,
-                TimeHorizon = 1.0,
-                SimulationsPerTask = 10000
-            };
-
-            var resultIds = new List<string>();
-            var tasks = new List<SubmitTasksRequest.Types.TaskCreation>();
-
-            // Create tasks
-            for (int i = 0; i < numberOfTasks; i++)
-            {
-                var resultId = resultClient.CreateResultsMetaData(new CreateResultsMetaDataRequest
-                {
-                    SessionId = createSessionReply.SessionId,
-                    Results = { new CreateResultsMetaDataRequest.Types.ResultCreate { Name = $"Result_{i}" } }
-                }).Results.Single().ResultId;
-
-                resultIds.Add(resultId);
-
-                var payloadId = resultClient.CreateResults(new CreateResultsRequest
-                {
-                    SessionId = createSessionReply.SessionId,
-                    Results = { new CreateResultsRequest.Types.ResultCreate
-                    {
-                        Data = UnsafeByteOperations.UnsafeWrap(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(simParams))),
-                        Name = $"Payload_{i}",
-                    }}
-                }).Results.Single().ResultId;
-
-                tasks.Add(new SubmitTasksRequest.Types.TaskCreation
-                {
-                    PayloadId = payloadId,
-                    ExpectedOutputKeys = { resultId },
-                });
-            }
-
-            var submitTasksResponse = taskClient.SubmitTasks(new SubmitTasksRequest
-            {
-                SessionId = createSessionReply.SessionId,
-                TaskCreations = { tasks },
-            });
-
-            WriteLine($"Submitted {tasks.Count} tasks");
-
-            // Wait for all results
-            await eventClient.WaitForResultsAsync(createSessionReply.SessionId,
-                                                resultIds,
-                                                CancellationToken.None);
-
-            // Aggregate results
-            double totalValue = 0.0;
-            foreach (var resultId in resultIds)
-            {
-                var result = await resultClient.DownloadResultData(createSessionReply.SessionId,
-                                                                 resultId,
-                                                                 CancellationToken.None);
-                totalValue += double.Parse(Encoding.UTF8.GetString(result));
-            }
-
-            var finalValue = totalValue / numberOfTasks;
-            WriteLine($"Estimated basket value: {finalValue:C2}");
-        }
-
-        public static async Task<int> Main(string[] args)
-        {
-            var endpoint = new Option<string>("--endpoint",
-                                            description: "Endpoint for the connection to ArmoniK control plane.",
-                                            getDefaultValue: () => "http://localhost:5001");
-            var partition = new Option<string>("--partition",
-                                             description: "Name of the partition to which submit tasks.",
-                                             getDefaultValue: () => "default");
-            var tasks = new Option<int>("--tasks",
-                                      description: "Number of Monte Carlo simulation tasks to run.",
-                                      getDefaultValue: () => 10);
-
-            var rootCommand = new RootCommand("Monte Carlo simulation for basket of assets valuation using ArmoniK.");
-            rootCommand.AddOption(endpoint);
-            rootCommand.AddOption(partition);
-            rootCommand.AddOption(tasks);
-
-            rootCommand.SetHandler(Run, endpoint, partition, tasks);
-
-            return await rootCommand.InvokeAsync(args);
-        }
-    }
+  }
 }

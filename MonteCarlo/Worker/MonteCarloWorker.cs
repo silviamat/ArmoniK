@@ -12,22 +12,6 @@ using ArmoniK.Api.Worker.Worker;
 
 using Microsoft.Extensions.Logging;
 
-static void ExtractValues(string input, out int value1, out int value2)
-{
-    Regex regex = new Regex(@"value1:\s*(\d+),\s*value2:\s*(\d+)");
-    Match match = regex.Match(input);
-
-    if (!match.Success)
-    {
-        throw new FormatException("Input string format is incorrect. Expected format: 'value1: <number>, value2: <number>'");
-    }
-
-    if (!int.TryParse(match.Groups[1].Value, out value1) || !int.TryParse(match.Groups[2].Value, out value2))
-    {
-        throw new FormatException("Failed to parse values as integers.");
-    }
-}
-
 namespace ArmoniK.MonteCarlo.Worker
 {
   public class MonteCarloWorker : WorkerStreamWrapper
@@ -98,6 +82,22 @@ namespace ArmoniK.MonteCarlo.Worker
              {
                Ok = new Empty(),
              };
+    }
+
+    static void ExtractValues(string input, out int value1, out int value2)
+    {
+        Regex regex = new Regex(@"value1:\s*(\d+),\s*value2:\s*(\d+)");
+        Match match = regex.Match(input);
+
+        if (!match.Success)
+        {
+            throw new FormatException("Input string format is incorrect. Expected format: 'value1: <number>, value2: <number>'");
+        }
+
+        if (!int.TryParse(match.Groups[1].Value, out value1) || !int.TryParse(match.Groups[2].Value, out value2))
+        {
+            throw new FormatException("Failed to parse values as integers.");
+        }
     }
   }
 }

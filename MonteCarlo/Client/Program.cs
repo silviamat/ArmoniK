@@ -21,7 +21,7 @@ using Google.Protobuf.WellKnownTypes;
 using static System.Console;
 
 
-namespace ArmoniK.Samples.HelloWorld.Client
+namespace ArmoniK.MonteCarlo.Client
 {
   internal static class Program
   {

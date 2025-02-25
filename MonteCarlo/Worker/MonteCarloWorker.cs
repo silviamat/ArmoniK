@@ -11,23 +11,23 @@ using ArmoniK.Api.Worker.Worker;
 
 using Microsoft.Extensions.Logging;
 
-namespace ArmoniK.Samples.HelloWorld.Worker
+namespace ArmoniK.MonteCarlo.Worker
 {
-  public class HelloWorldWorker : WorkerStreamWrapper
+  public class MonteCarloWorker : WorkerStreamWrapper
   {
     /// <summary>
-    ///   Initializes an instance of <see cref="HelloWorldWorker" />
+    ///   Initializes an instance of <see cref="MonteCarloWorker" />
     /// </summary>
     /// <param name="loggerFactory">Factory to create loggers</param>
     /// <param name="computePlane">Compute Plane</param>
     /// <param name="provider">gRPC channel provider to send tasks and results to ArmoniK Scheduler</param>
-    public HelloWorldWorker(ILoggerFactory      loggerFactory,
+    public MonteCarloWorker(ILoggerFactory      loggerFactory,
                             ComputePlane        computePlane,
                             GrpcChannelProvider provider)
       : base(loggerFactory,
              computePlane,
              provider)
-      => logger_ = loggerFactory.CreateLogger<HelloWorldWorker>();
+      => logger_ = loggerFactory.CreateLogger<MonteCarloWorker>();
 
     /// <summary>
     ///   Function that represents the processing of a task.

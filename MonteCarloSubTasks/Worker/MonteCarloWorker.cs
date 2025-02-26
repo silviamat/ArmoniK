@@ -240,7 +240,7 @@ public class BasketSimulator
                                                          {
                                                            new()
                                                            {
-                                                             Data = UnsafeByteOperations.UnsafeWrap(taskHandler.Payload),
+                                                             Data = UnsafeByteOperations.UnsafeWrap(Encoding.ASCII.GetBytes("Submitting joiner")),
                                                              Name = "Payload",
                                                            },
                                                          });

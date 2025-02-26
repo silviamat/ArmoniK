@@ -284,6 +284,8 @@ public class BasketSimulator
             timeToMaturity
         );
 
+        Console.WriteLine($"Result: {value}");
+
       var resultId = taskHandler.ExpectedResults.Single();
       // We add the SubTaskId to the result 
       await taskHandler.SendResult(resultId,
@@ -294,6 +296,7 @@ public class BasketSimulator
     private async Task Joiner(ITaskHandler taskHandler)
     {
         logger_.LogDebug("Starting Joiner useCase");
+        Console.WriteLine("Starting Joiner useCase");
         var resultId = taskHandler.ExpectedResults.Single();
 
         // Get results as strings from dependencies

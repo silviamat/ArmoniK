@@ -122,7 +122,7 @@ public class BasketSimulator
             await Joiner(taskHandler);
             break;
           case "MonteCarloWorker":
-            await MonteCarloWorker(taskHandler);
+            await Worker(taskHandler);
             break;
           default:
             return new Output
@@ -266,7 +266,7 @@ public class BasketSimulator
                                          taskOptions);
     }
 
-    private static async Task MonteCarloWorker(ITaskHandler taskHandler)
+    private static async Task Worker(ITaskHandler taskHandler)
     {
         var input = Encoding.ASCII.GetString(taskHandler.Payload);
         ExtractValues(input, out double riskFreeRate, out double timeToMaturity);

@@ -75,7 +75,7 @@ public class BasketSimulator
         return Math.Exp(-riskFreeRate * timeToMaturity) * totalValue;
     }
 }
-  public class SubTaskingWorker : WorkerStreamWrapper
+  public class MonteCarloWorker : WorkerStreamWrapper
   {
     /// <summary>
     ///   Initializes an instance of <see cref="SubTaskingWorker" />

@@ -13,8 +13,6 @@ using ArmoniK.Api.Worker.Worker;
 
 using Microsoft.Extensions.Logging;
 
-using static System.Console;
-
 namespace ArmoniK.MonteCarlo.Worker
 {
     public struct Asset
@@ -111,7 +109,6 @@ public class BasketSimulator
 
       try
       {
-        WriteLine("Inside Worker");
         // We convert the binary payload from the handler back to the string sent by the client
         var input = Encoding.ASCII.GetString(taskHandler.Payload);
         ExtractValues(input, out int numSimulations, out double riskFreeRate, out double timeToMaturity);

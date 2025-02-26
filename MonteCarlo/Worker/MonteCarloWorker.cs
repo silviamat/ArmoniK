@@ -109,6 +109,7 @@ public class BasketSimulator
 
       try
       {
+        Console.WriteLine("Inside Worker");
         // We convert the binary payload from the handler back to the string sent by the client
         var input = Encoding.ASCII.GetString(taskHandler.Payload);
         ExtractValues(input, out int numSimulations, out double riskFreeRate, out double timeToMaturity);

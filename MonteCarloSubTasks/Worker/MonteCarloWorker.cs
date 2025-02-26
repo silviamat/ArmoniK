@@ -19,6 +19,8 @@ using Google.Protobuf.WellKnownTypes;
 
 using Microsoft.Extensions.Logging;
 
+using static System.Console;
+
 using Empty = ArmoniK.Api.gRPC.V1.Empty;
 
 namespace ArmoniK.MonteCarlo.Worker

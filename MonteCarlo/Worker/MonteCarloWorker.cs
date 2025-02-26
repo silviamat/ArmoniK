@@ -13,6 +13,8 @@ using ArmoniK.Api.Worker.Worker;
 
 using Microsoft.Extensions.Logging;
 
+using static System.Console;
+
 namespace ArmoniK.MonteCarlo.Worker
 {
     public struct Asset

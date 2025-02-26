@@ -146,6 +146,8 @@ namespace ArmoniK.MonteCarlo.Client
                                               resultId,
                                             },
                                             CancellationToken.None);
+      
+      Console.WriteLine($"Done waiting for ResultsAsync");
 
       // Download result
       var resultByteArray = await resultClient.DownloadResultData(createSessionReply.SessionId,

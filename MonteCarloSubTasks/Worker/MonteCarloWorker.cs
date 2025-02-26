@@ -110,6 +110,7 @@ public class BasketSimulator
         // We may use TaskOptions.Options to send a field UseCase where we inform
         // what should be executed
         var useCase = taskHandler.TaskOptions.Options["UseCase"];
+        Console.WriteLine("Inside Worker");
 
         switch (useCase)
         {

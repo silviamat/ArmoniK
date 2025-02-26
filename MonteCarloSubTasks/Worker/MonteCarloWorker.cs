@@ -112,7 +112,7 @@ public class BasketSimulator
         // We may use TaskOptions.Options to send a field UseCase where we inform
         // what should be executed
         var useCase = taskHandler.TaskOptions.Options["UseCase"];
-        Console.WriteLine("Inside Worker");
+        WriteLine("Inside Worker");
 
         switch (useCase)
         {
@@ -179,7 +179,7 @@ public class BasketSimulator
                             },
                           },
                         };
-      Console.WriteLine($"numPaths worker: {paths}");
+      WriteLine($"numPaths worker: {paths}");
       var subTaskResults = await taskHandler.CreateResultsMetaDataAsync(Enumerable.Range(1,
                                                                                          paths)
                                                                                   .Select(i => new CreateResultsMetaDataRequest.Types.ResultCreate
@@ -287,7 +287,7 @@ public class BasketSimulator
             timeToMaturity
         );
 
-        Console.WriteLine($"Result: {value}");
+        WriteLine($"Result: {value}");
 
       var resultId = taskHandler.ExpectedResults.Single();
       // We add the SubTaskId to the result 
@@ -299,7 +299,7 @@ public class BasketSimulator
     private async Task Joiner(ITaskHandler taskHandler)
     {
         logger_.LogDebug("Starting Joiner useCase");
-        Console.WriteLine("Starting Joiner useCase");
+        WriteLine("Starting Joiner useCase");
         var resultId = taskHandler.ExpectedResults.Single();
 
         // Get results as strings from dependencies

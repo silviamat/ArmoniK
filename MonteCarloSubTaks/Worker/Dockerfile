@@ -7,10 +7,10 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
-COPY ["MonteCarlo/Worker/MonteCarlo.Worker.csproj", "MonteCarlo/Worker/"]
-RUN dotnet restore "MonteCarlo/Worker/MonteCarlo.Worker.csproj"
+COPY ["MonteCarloSubTasks/Worker/MonteCarlo.Worker.csproj", "MonteCarloSubTasks/Worker/"]
+RUN dotnet restore "MonteCarloSubTasks/Worker/MonteCarlo.Worker.csproj"
 COPY . .
-WORKDIR "/src/MonteCarlo/Worker"
+WORKDIR "/src/MonteCarloSubTasks/Worker"
 RUN dotnet build "MonteCarlo.Worker.csproj" -c Release -o /app/build
 
 FROM build AS publish

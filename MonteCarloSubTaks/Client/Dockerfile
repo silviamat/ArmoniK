@@ -5,10 +5,10 @@ WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
-COPY ["MonteCarlo/Client/MonteCarlo.Client.csproj", "MonteCarlo/Client/"]
-RUN dotnet restore "MonteCarlo/Client/MonteCarlo.Client.csproj"
+COPY ["MonteCarloSubTasks/Client/MonteCarlo.Client.csproj", "MonteCarloSubTasks/Client/"]
+RUN dotnet restore "MonteCarloSubTasks/Client/MonteCarlo.Client.csproj"
 COPY . .
-WORKDIR "/src/MonteCarlo/Client"
+WORKDIR "/src/MonteCarloSubTasks/Client"
 RUN dotnet build "MonteCarlo.Client.csproj" -c Release -o /app/build
 
 FROM build AS publish

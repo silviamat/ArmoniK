@@ -89,7 +89,7 @@ public class BasketSimulator
       : base(loggerFactory,
              computePlane,
              provider)
-      => logger_ = loggerFactory.CreateLogger<SubTaskingWorker>();
+      => logger_ = loggerFactory.CreateLogger<MonteCarloWorker>();
 
     /// <summary>
     ///   Function that represents the processing of a task.
@@ -240,7 +240,7 @@ public class BasketSimulator
                                                          {
                                                            new()
                                                            {
-                                                             Data = UnsafeByteOperations.UnsafeWrap("Submiting Joiner"u8.ToArray()),
+                                                             Data = UnsafeByteOperations.UnsafeWrap(taskHandler.Payload),
                                                              Name = "Payload",
                                                            },
                                                          });

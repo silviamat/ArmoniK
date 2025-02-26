@@ -158,6 +158,7 @@ public class BasketSimulator
       logger_.LogDebug("Submitting Workers");
 
       var input = Encoding.ASCII.GetString(taskHandler.Payload);
+      var paths = int(input);
 
       var taskOptions = new TaskOptions
                         {
@@ -177,7 +178,7 @@ public class BasketSimulator
                         };
 
       var subTaskResults = await taskHandler.CreateResultsMetaDataAsync(Enumerable.Range(1,
-                                                                                         100)
+                                                                                         paths)
                                                                                   .Select(i => new CreateResultsMetaDataRequest.Types.ResultCreate
                                                                                                {
                                                                                                  Name = Guid.NewGuid() + "_" + i,
@@ -191,7 +192,7 @@ public class BasketSimulator
                                                          {
                                                            new()
                                                            {
-                                                             Data = UnsafeByteOperations.UnsafeWrap(Encoding.ASCII.GetBytes($"{input}")),
+                                                             Data = UnsafeByteOperations.UnsafeWrap(Encoding.ASCII.GetBytes("riskFreeRate: 0.05, timeToMaturity: 1.0")),
                                                              Name = "Payload",
                                                            },
                                                          });

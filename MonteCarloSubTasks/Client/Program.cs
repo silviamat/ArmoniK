@@ -36,7 +36,8 @@ namespace ArmoniK.MonteCarlo.Client
     /// <exception cref="Exception">Issues with results from tasks</exception>
     /// <exception cref="ArgumentOutOfRangeException">Unknown response type from control plane</exception>
     internal static async Task Run(string endpoint,
-                                   string partition)
+                                   string partition,
+                                   int paths)
     {
       // Create gRPC channel to connect with ArmoniK control plane
       var channel = GrpcChannelFactory.CreateChannel(new GrpcClient
@@ -110,7 +111,7 @@ namespace ArmoniK.MonteCarlo.Client
                                                    {
                                                      new CreateResultsRequest.Types.ResultCreate
                                                      {
-                                                       Data = UnsafeByteOperations.UnsafeWrap(Encoding.ASCII.GetBytes("riskFreeRate: 0.05, timeToMaturity: 1.0")),
+                                                       Data = UnsafeByteOperations.UnsafeWrap(Encoding.ASCII.GetBytes($"{paths}")),
                                                        Name = "Payload",
                                                      },
                                                    },
@@ -154,11 +155,11 @@ namespace ArmoniK.MonteCarlo.Client
       var doubleArray = System.Text.Json.JsonSerializer.Deserialize<List<double>>(
                           Encoding.UTF8.GetString(resultByteArray));
 
-      // Calculate the sum of all values
-      double sum = doubleArray.Sum();
+      // Calculate the final basket value
+      double value = doubleArray.Sum() / 100;
 
       // Print the sum
-      Console.WriteLine($"Final value of the basket: {sum}");
+      Console.WriteLine($"Final value of the basket: {value}");
     }
 
     public static async Task<int> Main(string[] args)
@@ -170,6 +171,9 @@ namespace ArmoniK.MonteCarlo.Client
       var partition = new Option<string>("--partition",
                                          description: "Name of the partition to which submit tasks.",
                                          getDefaultValue: () => "subtasking");
+      var paths = new Option<int>("--numpaths",
+                                         description: "Number of paths for simulation.",
+                                         getDefaultValue: () => 5);
       // Describe the application and its purpose
       var rootCommand = new RootCommand("SubTasking demo for ArmoniK.\n" + $" It sends a task to ArmoniK in the given partition <{partition.Name}>. " +
                                         "The task creates some subtasks and, for the result with an array of subtasks Ids will be returned. " +
@@ -179,11 +183,13 @@ namespace ArmoniK.MonteCarlo.Client
       // Add the options to the parser
       rootCommand.AddOption(endpoint);
       rootCommand.AddOption(partition);
+      rootCommand.AddOption(paths);
 
       // Configure the handler to call the function that will do the work
       rootCommand.SetHandler(Run,
                              endpoint,
-                             partition);
+                             partition,
+                             paths);
 
       // Parse the command line parameters and call the function that represents the application
       return await rootCommand.InvokeAsync(args);

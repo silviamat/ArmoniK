@@ -176,7 +176,7 @@ public class BasketSimulator
                             },
                           },
                         };
-
+      Console.WriteLine($"numPaths worker: {paths}");
       var subTaskResults = await taskHandler.CreateResultsMetaDataAsync(Enumerable.Range(1,
                                                                                          paths)
                                                                                   .Select(i => new CreateResultsMetaDataRequest.Types.ResultCreate

@@ -102,6 +102,7 @@ namespace ArmoniK.MonteCarlo.Client
                                  .Results.Single()
                                  .ResultId;
       Console.WriteLine($"resultId: {resultId}");
+      Console.WriteLine($"numPaths client: {paths}");
 
       // Create the payload metadata (a result) and upload data at the same time
       var payloadId = resultClient.CreateResults(new CreateResultsRequest

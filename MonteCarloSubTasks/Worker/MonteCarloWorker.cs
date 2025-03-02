@@ -19,8 +19,6 @@ using Google.Protobuf.WellKnownTypes;
 
 using Microsoft.Extensions.Logging;
 
-using static System.Console;
-
 using Empty = ArmoniK.Api.gRPC.V1.Empty;
 
 namespace ArmoniK.MonteCarlo.Worker
@@ -45,6 +43,8 @@ public class BasketSimulator
     private double GenerateNormalRandom()
     {
         // Box-Muller transform to generate a standard normal random variable
+        // Fijar semilla 
+        // Buscar generador y escoger uno
         double u1 = 1.0 - _random.NextDouble(); // Uniform(0,1] random doubles
         double u2 = 1.0 - _random.NextDouble();
         return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Cos(2.0 * Math.PI * u2);
@@ -112,7 +112,6 @@ public class BasketSimulator
         // We may use TaskOptions.Options to send a field UseCase where we inform
         // what should be executed
         var useCase = taskHandler.TaskOptions.Options["UseCase"];
-        WriteLine("Inside Worker");
 
         switch (useCase)
         {
@@ -179,7 +178,6 @@ public class BasketSimulator
                             },
                           },
                         };
-      WriteLine($"numPaths worker: {paths}");
       var subTaskResults = await taskHandler.CreateResultsMetaDataAsync(Enumerable.Range(1,
                                                                                          paths)
                                                                                   .Select(i => new CreateResultsMetaDataRequest.Types.ResultCreate
@@ -287,8 +285,6 @@ public class BasketSimulator
             timeToMaturity
         );
 
-        WriteLine($"Result: {value}");
-
       var resultId = taskHandler.ExpectedResults.Single();
       // We add the SubTaskId to the result 
       await taskHandler.SendResult(resultId,
@@ -299,7 +295,6 @@ public class BasketSimulator
     private async Task Joiner(ITaskHandler taskHandler)
     {
         logger_.LogDebug("Starting Joiner useCase");
-        WriteLine("Starting Joiner useCase");
         var resultId = taskHandler.ExpectedResults.Single();
 
         // Get results as strings from dependencies

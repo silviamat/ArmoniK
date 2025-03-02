@@ -160,7 +160,7 @@ compute_plane = {
       ]
     }
   },
-  armonik-cpp-hello-worker = {
+  armonik-cpp-montecarlo-worker = {
     # number of replicas for each deployment of compute plane
     replicas = 0
     # ArmoniK polling agent
@@ -177,7 +177,7 @@ compute_plane = {
     # ArmoniK workers
     worker = [
       {
-        image = "armonik-cpp-hello-worker"
+        image = "armonik-cpp-montecarlo-worker"
         tag="0.1.0"
         limits = {
           cpu    = "1000m"

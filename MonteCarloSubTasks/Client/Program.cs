@@ -150,19 +150,11 @@ namespace ArmoniK.MonteCarlo.Client
       Console.WriteLine($"Done waiting for ResultsAsync");
 
       // Download result
-      var resultByteArray = await resultClient.DownloadResultData(createSessionReply.SessionId,
-                                                          resultId,
-                                                          CancellationToken.None);
+      var result = await resultClient.DownloadResultData(createSessionReply.SessionId,
+                                                         resultId,
+                                                         CancellationToken.None);
 
-      // Deserialize the JSON array of doubles
-      var doubleArray = System.Text.Json.JsonSerializer.Deserialize<List<double>>(
-                          Encoding.UTF8.GetString(resultByteArray));
-
-      // Calculate the final basket value
-      double value = doubleArray.Sum() / 100;
-
-      // Print the sum
-      Console.WriteLine($"Final value of the basket: {value}");
+      WriteLine($"resultId: {resultId}, Basket value: {Encoding.ASCII.GetString(result)}");
     }
 
     public static async Task<int> Main(string[] args)

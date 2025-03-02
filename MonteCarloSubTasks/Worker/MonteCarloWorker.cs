@@ -306,12 +306,31 @@ public class BasketSimulator
                                     .Select(result => $"{result}")
                                     .ToList();
 
-        // Serialize the list as a proper vector/array
-        var serializedVector = System.Text.Json.JsonSerializer.Serialize(resultsArray);
+        double mean = 0;
+        var validNumbers = new List<double>();
 
-        // Send the serialized vector as the result
-        await taskHandler.SendResult(resultId, 
-                                Encoding.UTF8.GetBytes(serializedVector));
+        foreach (var result in resultsArray)
+        {
+            if (double.TryParse(result, out double number))
+            {
+                validNumbers.Add(number);
+            }
+        }
+
+        // Calculate the mean if we have valid numbers
+        if (validNumbers.Count > 0)
+        {
+            mean = validNumbers.Sum() / validNumbers.Count;
+        }
+        else
+        {
+            throw new FormatException("Failed to calculate mean.");
+        }
+
+        // We the result of the task using through the handler
+        await taskHandler.SendResult(resultId,
+                                     Encoding.ASCII.GetBytes($"{mean}"))
+                         .ConfigureAwait(false);
     }
 
     static void ExtractValues(string input, out double riskFreeRate, out double timeToMaturity)

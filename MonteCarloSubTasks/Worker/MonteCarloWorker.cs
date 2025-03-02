@@ -160,7 +160,10 @@ public class BasketSimulator
       logger_.LogDebug("Submitting Workers");
 
       var input = Encoding.ASCII.GetString(taskHandler.Payload);
-      var paths = int.Parse(input);
+      int paths;
+      if(!int.TryParse(input, out paths)){
+          throw new FormatException("Failed to parse value as int.");
+      }
 
       var taskOptions = new TaskOptions
                         {

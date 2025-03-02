@@ -160,7 +160,7 @@ public class BasketSimulator
       logger_.LogDebug("Submitting Workers");
 
       var input = Encoding.ASCII.GetString(taskHandler.Payload);
-      var paths = int.Parse(input);
+      int.TryParse(input, out paths)
 
       var taskOptions = new TaskOptions
                         {
